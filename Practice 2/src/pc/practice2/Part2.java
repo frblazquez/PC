@@ -1,5 +1,8 @@
 package pc.practice2;
 
+import pc.practice2.locks.LockTieBreaker;
+import pc.practice2.locks.MyLock;
+
 /**
  * Practice 2 second part, own implemented mutual exclusion mechanisms.
  * 
@@ -7,12 +10,11 @@ package pc.practice2;
  */
 public class Part2 {
 
-    private static final int M = 1000;
-    private static final int N = 100;
-    private static int a = 0;
+    private static final int M = 100; // Number increments/decrements
+    private static final int N = 20; // Number of incrementers/decrementers
 
-    private static volatile int[] tickets = new int[2 * N];
-    private static volatile boolean[] entering = new boolean[2 * N];
+    private static MyLock mtx = new LockTieBreaker(2 * N);
+    private static volatile int a = 0;
 
     public static void main(String[] args) {
 
@@ -30,12 +32,6 @@ public class Part2 {
 	    incrementers[i] = new Thread(ic);
 	}
 
-	// Protection arrays initialization
-	for (int i = 0; i < 2 * N; i++) {
-	    tickets[i] = 0;
-	    entering[i] = false;
-	}
-
 	// Threads execution start
 	for (int i = 0; i < N; i++) {
 	    decrementers[i].start();
@@ -47,46 +43,13 @@ public class Part2 {
 	    try {
 		decrementers[i].join();
 		incrementers[i].join();
-	    } catch (InterruptedException e) {
-		// Interruptions are not considered
+	    } catch (InterruptedException e) { // Interruptions are not considered
 		e.printStackTrace();
 	    }
 	}
 
 	// The output should be 0 (same increments and decrements)
 	System.out.println(a);
-    }
-
-    public static void lock(int pid) {
-
-	// System.out.println("Locking process " + pid);
-
-	entering[pid] = true;
-	entering = entering;
-
-	int max = 0;
-	for (int ticket : tickets)
-	    max = Math.max(max, ticket);
-	tickets[pid] = 1 + max;
-	tickets = tickets;
-
-	entering[pid] = false;
-	entering = entering;
-
-	for (int i = 0; i < 2 * N; i++) {
-	    if (i != pid) {
-		while (entering[i])
-		    Thread.yield(); /* Active wait? */
-		while (tickets[i] != 0 && (tickets[pid] > tickets[i] || (tickets[pid] == tickets[i] && pid > i)))
-		    Thread.yield(); /* Active wait */
-	    }
-	}
-    }
-
-    public static void unlock(int pid) {
-	// System.out.println("Unlocking process " + pid);
-	tickets[pid] = 0;
-	tickets = tickets;
     }
 
     /**
@@ -103,9 +66,9 @@ public class Part2 {
 	@Override
 	public void run() {
 	    for (int i = 0; i < M; i++) {
-		lock(code);
+		mtx.lock(code);
 		a--;
-		unlock(code);
+		mtx.unlock(code);
 	    }
 	}
     }
@@ -124,9 +87,9 @@ public class Part2 {
 	@Override
 	public void run() {
 	    for (int i = 0; i < M; i++) {
-		lock(code);
+		mtx.lock(code);
 		a++;
-		unlock(code);
+		mtx.unlock(code);
 	    }
 	}
     }
