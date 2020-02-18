@@ -1,6 +1,6 @@
 package pc.practice2;
 
-import pc.practice2.locks.LockTieBreaker;
+import pc.practice2.locks.LockTicket;
 import pc.practice2.locks.MyLock;
 
 /**
@@ -11,9 +11,9 @@ import pc.practice2.locks.MyLock;
 public class Part2 {
 
     private static final int M = 100; // Number increments/decrements
-    private static final int N = 20; // Number of incrementers/decrementers
+    private static final int N = 15; // Number of incrementers/decrementers
 
-    private static MyLock mtx = new LockTieBreaker(2 * N);
+    private static MyLock mtx = new LockTicket(2 * N);
     private static volatile int a = 0;
 
     public static void main(String[] args) {
