@@ -1,5 +1,10 @@
 package pc.practice2.locks;
 
+/**
+ * Ticket lock algorithm for several threads implementation.
+ * 
+ * @author Francisco Javier Blázquez Martínez
+ */
 public class LockTicket implements MyLock {
 
     private final int N;

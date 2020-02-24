@@ -1,5 +1,10 @@
 package pc.practice2.locks;
 
+/**
+ * Bakery algorithm for several threads implementation.
+ * 
+ * @author Francisco Javier Blázquez Martínez
+ */
 public class LockBakery implements MyLock {
 
     private final int N;
@@ -22,6 +27,7 @@ public class LockBakery implements MyLock {
     @Override
     public void lock(int pid) {
 	entering[pid] = true;
+	entering = entering;
 
 	int max = 0;
 	for(int ticket : tickets)
@@ -29,6 +35,7 @@ public class LockBakery implements MyLock {
 	tickets[pid] = 1 + max;
 
 	entering[pid] = false;
+	entering = entering;
 
 	for(int i = 0; i < N; i++) {
 	    if (i == pid)
@@ -43,6 +50,7 @@ public class LockBakery implements MyLock {
     @Override
     public void unlock(int pid) {
 	tickets[pid] = 0;
+	tickets = tickets;
     }
 
 }

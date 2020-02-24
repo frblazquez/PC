@@ -1,5 +1,10 @@
 package pc.practice2.locks;
 
+/**
+ * Peterson algorithm for several threads implementation.
+ * 
+ * @author Francisco Javier Blázquez Martínez
+ */
 public class LockTieBreaker implements MyLock {
 
     private volatile int[] level;
@@ -23,7 +28,9 @@ public class LockTieBreaker implements MyLock {
     public void lock(int pid) {
 	for(int i = 0; i < N - 1; i++) {
 	    level[pid] = i;
+	    level = level;
 	    last[i] = pid;
+	    last = last;
 
 	    for(int j = 0; j < N; j++) {
 		if (j == pid)
@@ -37,6 +44,7 @@ public class LockTieBreaker implements MyLock {
     @Override
     public void unlock(int pid) {
 	level[pid] = -1;
+	level = level;
     }
 
 }
