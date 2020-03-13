@@ -1,21 +1,21 @@
 package pc.practice3;
 
 import pc.practice3.schema.Consumer;
-import pc.practice3.schema.OneProductWarehouse;
 import pc.practice3.schema.Producer;
+import pc.practice3.schema.SeveralProductsWarehouse;
 import pc.practice3.schema.Warehouse;
 
 /**
- * Producers-Consumers problem with semaphores with bus size of a single
- * element.
+ * Producers-Consumers problem with semaphores with bus size with space for
+ * several elements.
  * 
  * @author Francisco Javier Blázquez Martínez
  */
-public class Part2 {
+public class Part3 {
 
     private static final int N_PROD = 10;
     private static final int N_CONS = 10;
-    private static Warehouse wh = new OneProductWarehouse();
+    private static Warehouse wh = new SeveralProductsWarehouse();
 
     public static void main(String[] args) {
 
