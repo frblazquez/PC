@@ -2,7 +2,7 @@ package pc.practice4.part2;
 
 import pc.practice4.part2.schema.Consumer;
 import pc.practice4.part2.schema.Producer;
-import pc.practice4.part2.schema.SeveralProductsWarehouse;
+import pc.practice4.part2.schema.Warehouse2_1;
 import pc.practice4.part2.schema.Warehouse;
 
 /**
@@ -11,11 +11,13 @@ import pc.practice4.part2.schema.Warehouse;
  * 
  * @author Francisco Javier Blázquez Martínez
  */
-public class Part2 {
+public class Part2_1 {
 
     private static final int N_PROD = 10;
     private static final int N_CONS = 10;
-    private static Warehouse wh = new SeveralProductsWarehouse();
+    private static final int MAX_TO_PRODUCE = 15;
+    private static final int MAX_TO_CONSUME = 10;
+    private static Warehouse wh = new Warehouse2_1();
 
     public static void main(String[] args) {
 
@@ -24,10 +26,10 @@ public class Part2 {
 	Thread[] consumers = new Thread[N_CONS];
 
 	for(int i = 0; i < N_PROD; i++)
-	    producers[i] = new Thread(new Producer(i, wh));
+	    producers[i] = new Thread(new Producer(i, wh, MAX_TO_PRODUCE));
 
 	for(int i = 0; i < N_CONS; i++)
-	    consumers[i] = new Thread(new Consumer(i, wh));
+	    consumers[i] = new Thread(new Consumer(i, wh, MAX_TO_CONSUME));
 
 	// Threads execution start
 	for(int i = 0; i < N_PROD; i++)

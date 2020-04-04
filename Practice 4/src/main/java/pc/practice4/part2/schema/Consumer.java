@@ -3,21 +3,22 @@ package pc.practice4.part2.schema;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 public class Consumer implements Runnable {
 
-    // TODO: Replace with a public constant in a proper place
-    private static final int MAX_TO_CONSUME = 10;
-    private static final Logger logger = LogManager.getLogger();
-
+    private final int MAX_TO_CONSUME;
     private int pid;
     private Warehouse wh;
 
     public Consumer(int pid, Warehouse wh) {
 	this.pid = pid;
 	this.wh = wh;
+	this.MAX_TO_CONSUME = 10;
+    }
+
+    public Consumer(int pid, Warehouse wh, int max_consumption) {
+	this.pid = pid;
+	this.wh = wh;
+	this.MAX_TO_CONSUME = max_consumption;
     }
 
     @Override
@@ -29,12 +30,9 @@ public class Consumer implements Runnable {
 	    nConsumed = 1 + ThreadLocalRandom.current().nextInt(0, MAX_TO_CONSUME);
 	    consumed = wh.extract(nConsumed);
 
-	    try {
-		Thread.sleep(200);
-	    } catch (InterruptedException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	    }
+	    //@formatter:off
+	    try { Thread.sleep(200); }
+	    catch (InterruptedException e) { e.printStackTrace(); }
 	}
     }
 

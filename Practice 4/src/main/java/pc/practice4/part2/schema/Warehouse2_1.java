@@ -12,9 +12,9 @@ import org.apache.logging.log4j.Logger;
  * 
  * @author Francisco Javier Blázquez Martínez
  */
-public class SeveralProductsWarehouse implements Warehouse {
+public class Warehouse2_1 implements Warehouse {
 
-    private static final int BUS_SIZE = 20;
+    private static final int BUS_SIZE = 12;
     private static final Logger logger = LogManager.getLogger();
 
     private int produceIdx = 0;
@@ -23,12 +23,19 @@ public class SeveralProductsWarehouse implements Warehouse {
     private Product[] products = new Product[BUS_SIZE];
 
 
+    /*
+     * Depending on where we place synchronized block (inside or outside for) we
+     * have several posibilites. It's remaining to analyze the correctness of these
+     * other options.
+     */
+
     @Override
     public void store(List<Product> prs) {
 	synchronized (this) {
 	    for(Product p : prs) {
 		while(nInBus == BUS_SIZE) {
 		    try {
+			notifyAll();
 			this.wait();
 		    } catch (InterruptedException e) {
 			e.printStackTrace();
@@ -39,8 +46,9 @@ public class SeveralProductsWarehouse implements Warehouse {
 		nInBus++;
 		logger.info("Produced " + p);
 		logger.debug("In the buffer: " + nInBus);
-		notifyAll();
+		// notifyAll();
 	    }
+	    notifyAll();
 	}
     }
 
@@ -52,6 +60,7 @@ public class SeveralProductsWarehouse implements Warehouse {
 	    for(int i = 0; i < n; i++) {
 		while(nInBus == 0) {
 		    try {
+			notifyAll();
 			wait();
 		    } catch (InterruptedException e) {
 			e.printStackTrace();
@@ -63,8 +72,9 @@ public class SeveralProductsWarehouse implements Warehouse {
 		consumeIdx = (consumeIdx + 1) % BUS_SIZE;
 		nInBus--;
 		logger.debug("In the buffer: " + nInBus);
-		notifyAll();
+		// notifyAll();
 	    }
+	    notifyAll();
 	}
 
 	return paux;

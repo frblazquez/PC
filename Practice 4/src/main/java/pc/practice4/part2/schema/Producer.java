@@ -4,15 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 public class Producer implements Runnable {
 
-    // TODO: Replace with a public constant in a proper place
-    private static final int MAX_TO_PRODUCE = 10;
-    private static final Logger logger = LogManager.getLogger();
-
+    private final int MAX_TO_PRODUCE;
     private int pid;
     private Warehouse wh;
     private int idx = 0;
@@ -20,6 +14,13 @@ public class Producer implements Runnable {
     public Producer(int pid, Warehouse wh) {
 	this.pid = pid;
 	this.wh = wh;
+	this.MAX_TO_PRODUCE = 10;
+    }
+
+    public Producer(int pid, Warehouse wh, int max_production) {
+	this.pid = pid;
+	this.wh = wh;
+	this.MAX_TO_PRODUCE = max_production;
     }
 
     @Override
@@ -37,13 +38,10 @@ public class Producer implements Runnable {
 	    }
 
 	    wh.store(produced);
-
-	    try {
-		Thread.sleep(200);
-	    } catch (InterruptedException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	    }
+	    
+	    //@formatter:off
+	    try {Thread.sleep(200);}
+	    catch (InterruptedException e) { e.printStackTrace();}
 	}
     }
 
