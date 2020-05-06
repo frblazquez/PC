@@ -13,6 +13,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
+ * Practice 5 part 1 - This class implements a client connection to the file
+ * server. After the connection the client requests a file from the file server
+ * and writes it in it's folder.
  * 
  * @author Francisco Javier Blázquez Martínez
  */
@@ -25,6 +28,8 @@ public class FileClient {
 	// The connection is done among processes in this machine
 	String hostname = InetAddress.getLocalHost().getHostName();
 
+	// Theoretically, client shouldn't have access to server classes
+	// we allow it only to take the PORT
 	try (Socket socket = new Socket(hostname, FileServer.PORT)) {
 
 	    // First we get the data streams
@@ -40,11 +45,13 @@ public class FileClient {
 
 	    // We read the file retrieved
 	    byte[] b = in.readAllBytes();
-	    
+
 	    // Finally we place the file in our folder
-	    Path path = Paths.get(BASE_FOLDER + filename);
-	    Files.write(path, b);
-	    
+	    if (b.length > 0) {
+		Path path = Paths.get(BASE_FOLDER + filename);
+		Files.write(path, b);
+	    }
+
 	} catch (IOException e) {
 	    System.err.println("Unable to connect to file server");
 	    e.printStackTrace();
