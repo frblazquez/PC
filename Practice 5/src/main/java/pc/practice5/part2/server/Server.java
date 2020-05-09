@@ -10,9 +10,11 @@ import java.net.Socket;
  */
 public class Server {
 
-    public static final int PORT = 4444;
+    private static final int PORT = 4444;
 
     // TODO: Add data structures to keep common information
+    // private ??
+    // private ??
 
     public static void main(String args[]) {
 
@@ -22,7 +24,7 @@ public class Server {
 		(new Thread(new ClientListener(socket))).start();
 	    }
 	} catch (IOException e) {
-	    // TODO Auto-generated catch block
+	    System.err.println("Unable to create the server");
 	    e.printStackTrace();
 	}
     }
