@@ -1,16 +1,14 @@
 package pc.practice5.part2.client;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
-import pc.practice5.part2.messages.CloseConnectionMsg;
-import pc.practice5.part2.messages.EstablishConnectionMsg;
-import pc.practice5.part2.messages.GetFileMsg;
-import pc.practice5.part2.messages.GetUsersMsg;
+import pc.practice5.part2.messages.MessageType;
 
 /**
  * 
@@ -23,13 +21,19 @@ public class Client {
 	String hostname = InetAddress.getLocalHost().getHostName();
 	try (Socket socket = new Socket(hostname, 4444); Scanner console_in = new Scanner(System.in);) {
 
+	    Thread th = new Thread(new ServerListener(socket));
+	    th.start();
+
 	    ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+	    ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 
 	    String userName = "user1";
 	    String ip = InetAddress.getLocalHost().getHostName();
 	    User user = new User(userName, ip);
 
-	    out.writeObject(new EstablishConnectionMsg(user));
+	    System.out.println("Establishing the connection");
+	    out.writeObject(MessageType.CONNECT);
+	    out.writeObject(user);
 	    out.flush();
 
 	    int option;
@@ -46,15 +50,16 @@ public class Client {
 		// TODO: Complete
 		switch (option) {
 		case 0:
-		    out.writeObject(new CloseConnectionMsg());
+		    out.writeObject(MessageType.DISCONNECT);
+		    out.writeObject(userName);
 		    out.flush();
 		    break;
 		case 1:
-		    out.writeObject(new GetUsersMsg());
+		    out.writeObject(MessageType.GET_USERS);
 		    out.flush();
 		    break;
 		case 2:
-		    out.writeObject(new GetFileMsg());
+		    out.writeObject(MessageType.GET_FILE);
 		    out.flush();
 		    break;
 		default:

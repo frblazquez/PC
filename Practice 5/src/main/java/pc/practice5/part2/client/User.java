@@ -1,10 +1,12 @@
 package pc.practice5.part2.client;
 
-import java.io.File;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class User {
+public class User implements Serializable {
+
+    private static final long serialVersionUID = -5134294967447495010L;
     private static final String BASE_FOLDER = "src/main/resources/part2/users/";
 
     private String id;
@@ -15,14 +17,8 @@ public class User {
 	this.id = userName;
 	this.ip_address = ip;
 
-	// TODO: This part can be improved
-	File usr_folder = new File(BASE_FOLDER + userName);
-	File[] files = usr_folder.listFiles();
-
-	file_names = new ArrayList<String>();
-	for(File f : files) {
-	    file_names.add(f.getName());
-	}
+	// TODO: Always empty
+	this.file_names = new ArrayList<String>();
     }
 
     public String getId() {

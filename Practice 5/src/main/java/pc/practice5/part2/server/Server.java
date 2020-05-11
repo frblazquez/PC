@@ -26,7 +26,8 @@ public class Server {
 	try (ServerSocket serverSocket = new ServerSocket(PORT)) {
 	    while(true) {
 		Socket socket = serverSocket.accept();
-		(new Thread(new ClientListener(socket))).start();
+		Thread th = new Thread(new ClientListener(socket));
+		th.start();
 	    }
 	} catch (IOException e) {
 	    // TODO: Exceptions management
