@@ -17,7 +17,7 @@ public class User implements Serializable {
 	this.id = userName;
 	this.ip_address = ip;
 
-	// TODO: Always empty
+	// TODO: Always empty, check it has a folder and take all the files
 	this.file_names = new ArrayList<String>();
     }
 

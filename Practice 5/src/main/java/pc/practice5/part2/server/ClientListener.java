@@ -5,6 +5,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import pc.practice5.part2.client.User;
 import pc.practice5.part2.messages.MessageType;
 
@@ -16,10 +19,12 @@ import pc.practice5.part2.messages.MessageType;
  */
 public class ClientListener implements Runnable {
 
-    // TODO: Remove unnecessary attributes
+    private static final Logger logger = LogManager.getLogger();
+
     private Socket channel;
     private ObjectInputStream channel_object_in;
     private ObjectOutputStream channel_object_out;
+    private String client_id;
 
     public ClientListener(Socket socket) throws IOException {
 	channel = socket;
@@ -27,44 +32,56 @@ public class ClientListener implements Runnable {
 	channel_object_out = new ObjectOutputStream(channel.getOutputStream());
     }
 
+    public void setConnectionProtocol() throws ClassNotFoundException, IOException {
+	logger.info("Establishing the connection...");
+	User user = (User) channel_object_in.readObject();
+	client_id = user.getId();
+	Server.addUser(user);
+	logger.debug("Connection established");
+    }
+
+    public void disconnectProtocol() throws ClassNotFoundException, IOException {
+	logger.info("Closing connection with user...");
+	Server.removeUser(client_id);
+	channel_object_in.close();
+	channel_object_out.close();
+	channel.close();
+	logger.debug("User " + client_id + " disconnected");
+    }
+
+    public void getUsersProtocol() throws IOException {
+	logger.info("Getting the users connected...");
+	// TODO: It is a bad idea sending the whole array!
+	channel_object_out.writeObject(Server.getAllUsers());
+	channel_object_out.flush();
+	logger.debug("Users connected sent to client");
+    }
+    
+    public void getFileProtocol() {
+	logger.info("Getting file requested...");
+    }
+    
     @Override
     public void run() {
-
-	while(true) {
-	    try {
-		MessageType type = (MessageType) channel_object_in.readObject();
+	
+	try {
+	    setConnectionProtocol();
+	    
+	    MessageType type = (MessageType) channel_object_in.readObject();
+	    while(type != MessageType.DISCONNECT) {
 		switch (type) 
 		{
-		case CONNECT: // TODO: This shouldn't be inside switch but before
-		    System.out.println("Establishing the connection...");
-		    User user = (User) channel_object_in.readObject();
-		    Server.addUser(user);
-		    System.out.println("Connection established");
-		    break;
-		case DISCONNECT:
-		    System.out.println("Closing connection with user...");
-		    String userId = (String) channel_object_in.readObject();
-		    Server.removeUser(userId);
-		    System.out.println("User " + userId + " disconnected");
-		    break;
-		case GET_FILE:
-		    System.out.println("Getting file requested...");
-		    break;
-		case GET_USERS:
-		    System.out.println("Getting the users connected...");
-		    // TODO: It is a bad idea sending the whole array!
-		    channel_object_out.writeObject(Server.getAllUsers());
-		    channel_object_out.flush();
-		    System.out.println("Users connected sent to client");
-		    break;
-		default:
-		    System.err.println("ERROR: Invalid request to server");
-		    break;
+		case GET_FILE:	getFileProtocol();	break;
+		case GET_USERS:	getUsersProtocol();   	break;
+		default:	logger.error("Invalid request to the server");
 		}
-	    } catch (ClassNotFoundException | IOException e) {
-		// TODO: Exceptions management
-		e.printStackTrace();
+		type = (MessageType) channel_object_in.readObject();
 	    }
+	    
+	    disconnectProtocol();
+	} catch (ClassNotFoundException | IOException e) {
+	    // TODO: Exceptions management
+	    e.printStackTrace();
 	}
     }
 
