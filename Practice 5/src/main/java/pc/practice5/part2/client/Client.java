@@ -3,19 +3,20 @@ package pc.practice5.part2.client;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Scanner;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import pc.practice5.part2.messages.MessageType;
+import pc.practice5.part2.common.MessageType;
+import pc.practice5.part2.common.User;
 
 /**
+ * Client class implementation for file-sharing application among several
+ * clients connected to a manager server.
  * 
  * @author Francisco Javier Blázquez Martínez
  */
@@ -25,7 +26,6 @@ public class Client implements Runnable {
 
     private String client_id;
     private String client_ip;
-
     private Scanner console_in;
     private Socket channel;
     private ObjectOutputStream channel_object_out;
@@ -41,6 +41,10 @@ public class Client implements Runnable {
 	channel_object_in = new ObjectInputStream(s.getInputStream());
     }
 
+    public String getId() {
+	return client_id;
+    }
+
     private int getUserOption() {
 	System.out.println("--------------------------------------------------");
 	System.out.println("Set option:");
@@ -52,81 +56,83 @@ public class Client implements Runnable {
 	return console_in.nextInt();
     }
 
-    public void setConnectionProtocol() throws IOException {
-	logger.info("Establishing the connection...");
+    public void setConnectionProtocol() throws IOException, ClassNotFoundException {
+	logger.info("Client " + client_id + " establishing the connection");
+	channel_object_out.writeObject(MessageType.CONNECT);
 	channel_object_out.writeObject(new User(client_id, client_ip));
 	channel_object_out.flush();
-	logger.debug("Connection established");
+	MessageType answer = (MessageType) channel_object_in.readObject();
+	if (answer != MessageType.CONNECTED)
+	    throw new ConnectException();
+	logger.debug("Client " + client_id + "connection established");
     }
 
-    public void disconnectProtocol() throws IOException {
-	logger.info("Closing connection...");
+    public void disconnectRequest() throws IOException, ClassNotFoundException {
+	logger.info("Client " + client_id + " closing connection...");
 	channel_object_out.writeObject(MessageType.DISCONNECT);
 	channel_object_out.flush();
-	channel_object_in.close();
-	channel_object_out.close();
-	channel.close();
-	logger.debug("Connection closed");
     }
 
-    public void getUsersProtocol() throws IOException, ClassNotFoundException {
+    public void getUsersRequest() throws IOException, ClassNotFoundException {
 	logger.info("Asking for users information...");
-	channel_object_out.writeObject(MessageType.GET_USERS);
+	channel_object_out.writeObject(MessageType.ASK_USERS);
 	channel_object_out.flush();
-	List<String> users;
-	users = (ArrayList<String>) channel_object_in.readObject();
-	for(String usr : users)
-	    System.out.println(usr);
-	logger.debug("Users successfully retrieved...");
     }
 
-    public void getFileProtocol() throws IOException {
+    public void getFileRequest() throws IOException {
 	logger.info("Asking for a file to the server...");
 	channel_object_out.writeObject(MessageType.GET_FILE);
 	channel_object_out.flush();
-	logger.debug("File sucessfully retrieved...");
     }
 
+    /**
+     * Gets indefinitely a client order and sends the corresponding request to the
+     * server.
+     */
     @Override
     public void run() {
 
 	try {
 	    setConnectionProtocol();
-	    (new Thread(new ServerListener(channel_object_in, channel_object_out))).start();
+	    (new Thread(new ServerListener(this, channel, channel_object_in, channel_object_out))).start();
 
 	    int option = getUserOption();
 	    while(option != 0) {
 		switch (option) 
 		{
-		case 1: getUsersProtocol();     break;
-		case 2: getFileProtocol();	break;
+		case 1: getUsersRequest();     break;
+		case 2: getFileRequest();	break;
 		default: System.err.println("Option " + option + " not supported");
 		}
 		option = getUserOption();
 	    }
 
-	    disconnectProtocol();
+	    disconnectRequest();
 	} catch (ClassNotFoundException | IOException e) {
-	    // TODO Auto-generated catch block
-	    e.printStackTrace();
+	    logger.error("Client " + client_id + " ended execution abruptly", e);
 	}
     }
 
-    public static void main(String args[]) throws UnknownHostException {
+    /**
+     * 
+     * @param args
+     */
+    public static void main(String args[]) {
 
-	String hostname = InetAddress.getLocalHost().getHostName();
+	// Read and set the user name
+	Scanner in = new Scanner(System.in);
+	System.out.print("Username: ");
+	String userName = in.next();
 
 	try {
+	    // Connect with the server
+	    String hostname = InetAddress.getLocalHost().getHostName();
 	    Socket socket = new Socket(hostname, 4444);
-	    Scanner in = new Scanner(System.in);
-	    System.out.print("Username: ");
-	    String userName = in.next();
-	    String ip = InetAddress.getLocalHost().getHostName();
-	    Client user = new Client(userName, ip, socket, in);
-	    (new Thread(user)).start();
+
+	    // Client thread execution
+	    (new Thread(new Client(userName, hostname, socket, in))).start();
 	} catch (IOException e) {
-	    // TODO: Exceptions management
-	    e.printStackTrace();
+	    logger.fatal("Unable to connect client " + userName + " with server", e);
 	}
     }
 }

@@ -1,4 +1,4 @@
-package pc.practice5.part2.client;
+package pc.practice5.part2.common;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -7,7 +7,7 @@ import java.util.List;
 public class User implements Serializable {
 
     private static final long serialVersionUID = -5134294967447495010L;
-    private static final String BASE_FOLDER = "src/main/resources/part2/users/";
+    private static final String BASE_FOLDER = "src/main/resources/part2/";
 
     private String id;
     private String ip_address;

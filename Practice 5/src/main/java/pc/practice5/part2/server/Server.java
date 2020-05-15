@@ -10,9 +10,12 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import pc.practice5.part2.client.User;
+import pc.practice5.part2.common.User;
 
 /**
+ * This class implements a server for managing a share-files application among
+ * users. Clients can check who is connected and request files to other
+ * connected clients.
  * 
  * @author Francisco Javier Blázquez Martínez
  */
@@ -41,18 +44,21 @@ public class Server {
 	return new ArrayList<String>(user_ip.keySet());
     }
 
-    // TODO: port number as an argument?
+    /**
+     * Starts a server and waits indefinitely for client connections. Port number is
+     * fixed to be {@link #PORT}.
+     * 
+     * @param args unused
+     */
     public static void main(String args[]) {
 
 	try (ServerSocket serverSocket = new ServerSocket(PORT)) {
 	    while(true) {
 		Socket socket = serverSocket.accept();
-		Thread th = new Thread(new ClientListener(socket));
-		th.start();
+		(new Thread(new ClientListener(socket))).start();
 	    }
 	} catch (IOException e) {
-	    // TODO: Exceptions management
-	    e.printStackTrace();
+	    logger.fatal("Unable to start the server", e);
 	}
     }
 }
