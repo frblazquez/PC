@@ -42,14 +42,14 @@ public class ServerListener implements Runnable {
 	this.channel_object_out = o;
     }
 
-    private void disconnectAnswer() throws IOException {
+    private synchronized void disconnectAnswer() throws IOException {
 	channel.close();
 	channel_object_in.close();
 	channel_object_out.close();
 	logger.info("Client " + client.getId() + " disconnected");
     }
 
-    private void getUsersAnswer() throws ClassNotFoundException, IOException {
+    private synchronized void getUsersAnswer() throws ClassNotFoundException, IOException {
 	@SuppressWarnings("unchecked")
 	List<String> users = (ArrayList<String>) channel_object_in.readObject();
 	for(String usr : users)
@@ -57,6 +57,28 @@ public class ServerListener implements Runnable {
 	logger.debug("Users successfully retrieved...");
     }
 
+    private synchronized void nonExistentFileAnswer() throws ClassNotFoundException, IOException {
+	String fileName = (String) channel_object_in.readObject();
+	logger.warn("No client connected has the file \"" + fileName + "\" requested");
+    }
+
+    private synchronized void sendFileAnswer() throws ClassNotFoundException, IOException {
+	String fileName = (String) channel_object_in.readObject();
+	String destinationUser = (String) channel_object_in.readObject();
+	
+	FileSender sender = new FileSender(fileName, client.getId());
+	(new Thread(sender)).start();
+
+	client.notifySenderReady(fileName, destinationUser, sender.getPort());
+    }
+    
+    private void receiveFileAnswer() throws ClassNotFoundException, IOException {
+	String fileName = (String) channel_object_in.readObject();
+	String ownerUserIp = (String) channel_object_in.readObject();
+	int portNumber = (int) channel_object_in.readObject();
+
+	(new Thread(new FileReceiver(client, fileName, portNumber, ownerUserIp))).start();
+    }
 
     @Override
     public void run() {
@@ -65,7 +87,10 @@ public class ServerListener implements Runnable {
 	    MessageType type = (MessageType) channel_object_in.readObject();
 	    while(type != MessageType.DISCONNECTED) {
 		switch (type) {
-		case RECEIVE_USERS: getUsersAnswer(); break;
+		case RECEIVE_USERS: 	  getUsersAnswer(); 	   break;
+		case NON_EXISTENT_FILE:   nonExistentFileAnswer(); break;
+		case FILE_REQUEST_OWNER:  sendFileAnswer();	   break;
+		case FILE_RECEIVE:	  receiveFileAnswer();     break;
 		default: logger.error("Unknown option");
 		}
 		type = (MessageType) channel_object_in.readObject();

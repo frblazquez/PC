@@ -1,13 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="INFO">
-    <Appenders>
-        <Console name="console" target="SYSTEM_OUT">
-            <PatternLayout pattern="[%t] - %msg%n" />
-        </Console>
-    </Appenders>
-    <Loggers>
-        <Root level="info" additivity="false">
-            <AppenderRef ref="console" />
-        </Root>
-    </Loggers>
+	<Properties>
+		<Property name="LOG_PATTERN">[%t] %-5p %d{HH:mm:ss} %m%n</Property>
+		<Property name="LOG_FOLDER">src/main/resources/part2/logs</Property>
+	</Properties>
+	<Appenders>
+		<Console name="Console" target="SYSTEM_OUT">
+			<PatternLayout pattern="${LOG_PATTERN}" />
+		</Console>
+		<File name="server_file_appender" fileName="${LOG_FOLDER}/server.log">
+      		<PatternLayout pattern="${LOG_PATTERN}" />
+    	</File>
+    	<File name="client_file_appender" fileName="${LOG_FOLDER}/client.log">
+      		<PatternLayout pattern="${LOG_PATTERN}" />
+    	</File>
+	</Appenders>
+	<Loggers>
+		<Root level="info" additivity="false">
+			<AppenderRef ref="Console" />
+		</Root>
+		<logger name="pc.practice5.part2.server" level="debug" additivity="false">
+			<appender-ref ref="server_file_appender" />
+		</logger>
+		<logger name="pc.practice5.part2.client" level="debug" additivity="false">
+			<appender-ref ref="client_file_appender" />
+		</logger>
+	</Loggers>
 </Configuration>
