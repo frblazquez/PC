@@ -83,7 +83,7 @@ public class Client implements Runnable {
 	System.out.print("Desired file: ");
 	String fileName = console_in.next();
 	logger.info("User " + client_id + " asking for file " + fileName + " to the server");
-	channel_object_out.writeObject(MessageType.FILE_REQUEST_SERVER);
+	channel_object_out.writeObject(MessageType.FILE_REQUEST_TO_SERVER);
 	channel_object_out.writeObject(fileName);
 	channel_object_out.flush();
     }
@@ -138,13 +138,17 @@ public class Client implements Runnable {
 	System.out.print("Username: ");
 	String userName = in.next();
 
+	// In case we want to specify the server host address
+	// System.out.print("Server host: ");
+	// String serverHost = in.next();
+	
 	try {
 	    // Connect with the server (server in this same machine)
-	    String hostname = InetAddress.getLocalHost().getHostName();
-	    Socket socket = new Socket(hostname, 4444);
+	    String host = InetAddress.getLocalHost().getHostName();
+	    Socket socket = new Socket(host, 4444);
 
 	    // Client thread execution
-	    (new Thread(new Client(userName, hostname, socket, in))).start();
+	    (new Thread(new Client(userName, host, socket, in))).start();
 	} catch (IOException e) {
 	    logger.fatal("Unable to connect client " + userName + " with server", e);
 	}

@@ -1,6 +1,7 @@
 package pc.practice5.part2.server;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -33,7 +34,6 @@ public class Server {
 	logger.info("Adding user " + user.getId());
 
 	// User IDs are supposed to be unique, we continue execution even though
-	// TODO: Exception? Message to client to select another user ID?
 	if (user_ip.containsKey(user.getId()))
 	    logger.error("There is already a user registered with ID " + user.getId());
 
@@ -102,6 +102,7 @@ public class Server {
     public static void main(String args[]) {
 
 	try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+	    logger.debug("Server created at " + InetAddress.getLocalHost().getHostName() + ", port " + PORT);
 	    while(true) {
 		Socket socket = serverSocket.accept();
 		logger.debug("New connection established, creating listener for the client");

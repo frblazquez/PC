@@ -43,13 +43,13 @@ public class ClientListener implements Runnable {
 	logger.info("Establishing a new connection...");
 	MessageType request = (MessageType) channel_object_in.readObject();
 	if (request != MessageType.CONNECT)
-	    throw new ConnectException("Client is not following connection protocol properly");
+	    throw new ConnectException("User " + client_id + "is not following connection protocol properly");
 	User user = (User) channel_object_in.readObject();
 	client_id = user.getId();
 	Server.addUser(user, this);
 	channel_object_out.writeObject(MessageType.CONNECTED);
 	channel_object_out.flush();
-	logger.debug("Connection established with client " + client_id);
+	logger.debug("Connection established with user " + client_id);
     }
 
     /**
@@ -99,7 +99,7 @@ public class ClientListener implements Runnable {
 	    channel_object_out.writeObject(fileName);
 	    channel_object_out.flush();
 	} else {
-	    logger.debug("Notifying the request to the file owner");
+	    logger.debug("Notifying the file \"" + fileName + "\"request to the file owner " + ownerUser);
 	    Server.notifyFileRequest(client_id, ownerUser, fileName);
 	}
     }
@@ -139,11 +139,11 @@ public class ClientListener implements Runnable {
      * 
      */
     public synchronized void notifyFileReceiver() throws IOException, ClassNotFoundException {
-	logger.info("");
 	String fileName = (String) channel_object_in.readObject();
 	String requesterId = (String) channel_object_in.readObject();
 	String ownerIp = (String) channel_object_in.readObject();
 	int port = (int) channel_object_in.readObject();
+	logger.info("Notifying the user " + requesterId + " the file \"" + fileName + "\" is ready to be taken");
 	Server.notifyFileRequestAttended(requesterId, fileName, ownerIp, port);
     }
 
@@ -161,7 +161,7 @@ public class ClientListener implements Runnable {
 	    while(type != MessageType.DISCONNECT) {
 		switch (type) 
 		{
-		case FILE_REQUEST_SERVER:	getFileProtocol();	break;
+		case FILE_REQUEST_TO_SERVER:	getFileProtocol();	break;
 		case FILE_SENDER_READY:		notifyFileReceiver();	break;
 		case ASK_USERS:			getUsersProtocol();   	break;
 		default:			logger.error("Invalid request to the server");

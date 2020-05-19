@@ -6,11 +6,17 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
-import java.util.Random;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/**
+ * When a user is requested to send a file he runs this class properly
+ * configured. This implements a server in file owner machine which waits until
+ * requester user connects and the file is sent to him.
+ * 
+ * @author Francisco Javier Blázquez Martínez
+ */
 public class FileSender implements Runnable {
 
     private static final Logger logger = LogManager.getLogger();
@@ -19,10 +25,10 @@ public class FileSender implements Runnable {
     private String file_name;
     private String owner_id;
 
-    public FileSender(String fileName, String ownerId) {
+    public FileSender(String fileName, String ownerId, int portNumber) {
 	file_name = fileName;
 	owner_id = ownerId;
-	port = 4747; // Default port number
+	port = portNumber;
     }
 
     public int getPort() {
@@ -32,14 +38,7 @@ public class FileSender implements Runnable {
     @Override
     public void run() {
 	
-	// Get an available port number
-	boolean portAvailable = false;
-	Random rand = new Random();
-	
-	while(!portAvailable) {
-	    port = 1000+rand.nextInt(99000);
 	    try (ServerSocket serverSocket = new ServerSocket(port)) {
-		portAvailable = true;
 		logger.debug("File sender for file " + file_name + " using port " + port);
 		Socket socket = serverSocket.accept();
 		OutputStream out = socket.getOutputStream();
@@ -52,7 +51,7 @@ public class FileSender implements Runnable {
 
 		out.close();
 		socket.close();
+		logger.debug("User " + owner_id + " file sender for file " + file_name + " finished successfully");
 	    } catch (IOException ignored) { }
-	}
     }
 }

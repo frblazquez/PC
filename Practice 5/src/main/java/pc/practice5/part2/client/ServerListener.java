@@ -3,9 +3,11 @@ package pc.practice5.part2.client;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,14 +29,6 @@ public class ServerListener implements Runnable {
     private ObjectInputStream channel_object_in;
     private ObjectOutputStream channel_object_out;
 
-    // TODO: Remove when possible
-    public ServerListener(Client client, Socket channel) throws IOException {
-	this.client = client;
-	this.channel = channel;
-	this.channel_object_in = new ObjectInputStream(channel.getInputStream());
-	this.channel_object_out = new ObjectOutputStream(channel.getOutputStream());
-    }
-
     public ServerListener(Client client, Socket channel, ObjectInputStream i, ObjectOutputStream o) throws IOException {
 	this.client = client;
 	this.channel = channel;
@@ -52,6 +46,7 @@ public class ServerListener implements Runnable {
     private synchronized void getUsersAnswer() throws ClassNotFoundException, IOException {
 	@SuppressWarnings("unchecked")
 	List<String> users = (ArrayList<String>) channel_object_in.readObject();
+	System.out.println("User " + client.getId() + " get-users answer:");
 	for(String usr : users)
 	    System.out.println(usr);
 	logger.debug("Users successfully retrieved...");
@@ -59,17 +54,29 @@ public class ServerListener implements Runnable {
 
     private synchronized void nonExistentFileAnswer() throws ClassNotFoundException, IOException {
 	String fileName = (String) channel_object_in.readObject();
-	logger.warn("No client connected has the file \"" + fileName + "\" requested");
+	System.out.println("Ningún usuario tiene el fichero \"" + fileName + "\" solicitado");
+	logger.warn("No client connected has the file \"" + fileName + "\" requested by user " + client.getId());
     }
 
     private synchronized void sendFileAnswer() throws ClassNotFoundException, IOException {
 	String fileName = (String) channel_object_in.readObject();
 	String destinationUser = (String) channel_object_in.readObject();
 	
-	FileSender sender = new FileSender(fileName, client.getId());
+	Random rand = new Random();
+	int portNumber = 4747;
+	boolean portAvailable = false;
+
+	while(!portAvailable) {
+	    portNumber = 1000 + rand.nextInt(9000);
+	    try (ServerSocket serverSocket = new ServerSocket(portNumber)) {
+		portAvailable = true;
+	    } catch (Exception e) {}
+	}
+
+	FileSender sender = new FileSender(fileName, client.getId(), portNumber);
 	(new Thread(sender)).start();
 
-	client.notifySenderReady(fileName, destinationUser, sender.getPort());
+	client.notifySenderReady(fileName, destinationUser, portNumber);
     }
     
     private void receiveFileAnswer() throws ClassNotFoundException, IOException {

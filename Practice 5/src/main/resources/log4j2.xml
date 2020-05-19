@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="INFO">
 	<Properties>
-		<Property name="LOG_PATTERN">[%t] %-5p %d{HH:mm:ss} %m%n</Property>
+		<Property name="LOG_PATTERN">[%t] %-5p %d{HH:mm:ss} %m - %c{1}.%M %n</Property>
 		<Property name="LOG_FOLDER">src/main/resources/part2/logs</Property>
 	</Properties>
 	<Appenders>
@@ -19,10 +19,10 @@
 		<Root level="info" additivity="false">
 			<AppenderRef ref="Console" />
 		</Root>
-		<logger name="pc.practice5.part2.server" level="debug" additivity="false">
+		<logger name="pc.practice5.part2.server" level="debug" additivity="true">
 			<appender-ref ref="server_file_appender" />
 		</logger>
-		<logger name="pc.practice5.part2.client" level="debug" additivity="false">
+		<logger name="pc.practice5.part2.client" level="debug" additivity="true">
 			<appender-ref ref="client_file_appender" />
 		</logger>
 	</Loggers>
