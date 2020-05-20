@@ -52,6 +52,11 @@ public class FileClient {
 		Files.write(path, b);
 	    }
 
+	    // Streams close
+	    string_out.close();
+	    in.close();
+	    out.close();
+
 	} catch (IOException e) {
 	    System.err.println("Unable to connect to file server");
 	    e.printStackTrace();

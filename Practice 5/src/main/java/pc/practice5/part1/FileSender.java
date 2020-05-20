@@ -10,8 +10,8 @@ import java.net.Socket;
 import java.nio.file.Files;
 
 /**
- * Class responsible of receiving the request and sending the file to the client
- * from the server side.
+ * Practice 5 part 1 - Class responsible of receiving the request and sending
+ * the file to the client from the server side.
  * 
  * @author Francisco Javier Blázquez Martínez
  */
@@ -40,6 +40,12 @@ public class FileSender implements Runnable {
 	    byte[] fileContent = Files.readAllBytes(file.toPath());
 	    out.write(fileContent);
 	    out.flush();
+
+	    // Streams close
+	    string_in.close();
+	    in.close();
+	    out.close();
+	    socket.close();
 	} catch (IOException e) {
 	    System.err.println("Unable to find and send the file requested");
 	    e.printStackTrace();
