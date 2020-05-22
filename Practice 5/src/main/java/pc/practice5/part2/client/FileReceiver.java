@@ -10,10 +10,12 @@ import java.nio.file.Paths;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import pc.practice5.part2.common.User;
+
 /**
- * When a user is notified that the file he requested is ready to be sent by the
- * owner he runs this class configured with the owner IP and port of the sender
- * process.
+ * When a user is notified that the file he requested is ready to be shared by
+ * the owner he runs this class configured with the owner IP and port of the
+ * sender process.
  * 
  * @author Francisco Javier Blázquez Martínez
  */
@@ -35,16 +37,19 @@ public class FileReceiver implements Runnable {
 
     @Override
     public void run() {
-	logger.debug("Trying to connect to " + ip + ", port " + port);
+	logger.debug("Creating file receiver process from IP " + ip + ", port " + port);
 
 	try (Socket socket = new Socket(ip, port)) {
 	    InputStream in = socket.getInputStream();
 	    byte[] b = in.readAllBytes();
-	    Path path = Paths.get(Client.BASE_FOLDER + requester.getId() + "/input/" + file_name);
+	    Path path = Paths.get(User.BASE_FOLDER + requester.getId() + "/input/" + file_name);
 	    Files.write(path, b);
 	    in.close();
+	    System.out.println("Se ha obtenido correctamente el fichero \"" + file_name + "\"");
+	    logger.info("File \"" + file_name + "\" successfully copied to user " + requester.getId() + " directory");
 	} catch (IOException e) {
-	    logger.error("User "+requester.getId()+" not able to connect with file \""+file_name+"\" sender", e);
+	    logger.error("File \""+file_name+"\" receiver process for user "+requester.getId()+ " failed to connect with file owner");
+	    logger.error("User " + requester.getId() + " failed to obtain file \"" + file_name + "\"", e);
 	}
     }
 

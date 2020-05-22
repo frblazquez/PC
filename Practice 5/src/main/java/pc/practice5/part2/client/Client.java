@@ -16,14 +16,14 @@ import pc.practice5.part2.common.User;
 
 /**
  * Client class implementation for file-sharing application among several
- * clients connected to a manager server.
+ * clients connected to a manager server. Clients connect to the server and then
+ * can see who is connected to the server or asking for a file to other users.
  * 
  * @author Francisco Javier Blázquez Martínez
  */
 public class Client implements Runnable {
 
     private static final Logger logger = LogManager.getLogger();
-    public static final String BASE_FOLDER = "src/main/resources/part2/";
 
     private String client_id;
     private String client_ip;
@@ -47,17 +47,21 @@ public class Client implements Runnable {
     }
 
     private int getUserOption() {
-	System.out.println("--------------------------------------------------");
+	System.out.println("------------------------");
 	System.out.println("Select option:");
 	System.out.println("0) Exit");
 	System.out.println("1) Get all users");
 	System.out.println("2) Get a file");
-	System.out.println("--------------------------------------------------");
+	System.out.println("------------------------");
 	return console_in.nextInt();
     }
 
+    // IMPORTANT
+    // Methods are synchronized because they can be invoked after a client request
+    // or as an answer from a server request in ServerListener.
+
     public synchronized void setConnectionProtocol() throws IOException, ClassNotFoundException {
-	logger.info("User " + client_id + " establishing the connection");
+	logger.info("User " + client_id + " establishing the connection with server");
 	channel_object_out.writeObject(MessageType.CONNECT);
 	channel_object_out.writeObject(new User(client_id, client_ip));
 	channel_object_out.flush();
@@ -68,13 +72,13 @@ public class Client implements Runnable {
     }
 
     public synchronized void disconnectRequest() throws IOException, ClassNotFoundException {
-	logger.info("User " + client_id + " closing connection...");
+	logger.info("User " + client_id + " asking server to close the connection");
 	channel_object_out.writeObject(MessageType.DISCONNECT);
 	channel_object_out.flush();
     }
 
     public synchronized void getUsersRequest() throws IOException, ClassNotFoundException {
-	logger.info("User " + client_id + " asking for users information...");
+	logger.info("User " + client_id + " asking server for users connected information");
 	channel_object_out.writeObject(MessageType.ASK_USERS);
 	channel_object_out.flush();
     }
@@ -89,7 +93,7 @@ public class Client implements Runnable {
     }
 
     public synchronized void notifySenderReady(String fileName, String to, int port) throws IOException {
-	logger.info("Sender ready");
+	logger.info("User "+client_id+" notifying server that file \""+fileName+"\" is ready to be transferred");
 	channel_object_out.writeObject(MessageType.FILE_SENDER_READY);
 	channel_object_out.writeObject(fileName);
 	channel_object_out.writeObject(to);
@@ -122,7 +126,7 @@ public class Client implements Runnable {
 
 	    disconnectRequest();
 	} catch (ClassNotFoundException | IOException e) {
-	    logger.error("Client " + client_id + " ended execution abruptly", e);
+	    logger.error("User " + client_id + " ended execution abruptly", e);
 	}
     }
 
@@ -143,7 +147,7 @@ public class Client implements Runnable {
 	// String serverHost = in.next();
 	
 	try {
-	    // Connect with the server (server in this same machine)
+	    // Connect with the server (server in this same machine in port 4444)
 	    String host = InetAddress.getLocalHost().getHostName();
 	    Socket socket = new Socket(host, 4444);
 

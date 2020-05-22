@@ -14,7 +14,7 @@ import pc.practice5.part2.common.User;
 
 /**
  * This class is responsible of listening and managing all the requests received
- * from a client.
+ * from a client at the server side.
  * 
  * @author Francisco Javier Blázquez Martínez
  */
@@ -31,13 +31,17 @@ public class ClientListener implements Runnable {
 	channel = socket;
 	channel_object_in = new ObjectInputStream(channel.getInputStream());
 	channel_object_out = new ObjectOutputStream(channel.getOutputStream());
+
+	// client_id should be initialized while the connection is established
     }
 
+    // IMPORTANT
+    // Methods are synchronized because they can be invoked from the own listener
+    // after a request of a client or from the Server when attending another user
+    // file request. We have to protect the access to the streams.
+
     /**
-     * Connection protocol from server side.
-     * 
-     * @throws ClassNotFoundException
-     * @throws IOException
+     * Connection protocol implementation from server side.
      */
     public synchronized void setConnectionProtocol() throws ClassNotFoundException, IOException {
 	logger.info("Establishing a new connection...");
@@ -54,65 +58,54 @@ public class ClientListener implements Runnable {
 
     /**
      * Disconnection protocol from server side.
-     * 
-     * @throws ClassNotFoundException
-     * @throws IOException
      */
     public synchronized void disconnectProtocol() throws ClassNotFoundException, IOException {
-	logger.info("Closing connection with client " + client_id);
+	logger.info("Attending disconnect request from client " + client_id);
 	Server.removeUser(client_id);
 	channel_object_out.writeObject(MessageType.DISCONNECTED);
 	channel_object_out.flush();
 	channel_object_in.close();
 	channel_object_out.close();
 	channel.close();
-	logger.debug("Client " + client_id + " disconnected");
+	logger.debug("User " + client_id + " disconnect request ended successfully");
     }
 
     /**
      * Users connected retrieving protocol from server side.
-     * 
-     * @throws IOException
      */
     public synchronized void getUsersProtocol() throws IOException {
-	logger.info("Getting the clients connected for client " + client_id);
+	logger.info("Attending get-users request from user " + client_id);
 	channel_object_out.writeObject(MessageType.RECEIVE_USERS);
 	channel_object_out.writeObject(Server.getAllUsers());
 	channel_object_out.flush();
-	logger.debug("Users connected sent to client " + client_id);
+	logger.debug("Users connected sent to user " + client_id);
     }
     
     /**
      * File request protocol from server side.
-     * 
-     * @throws ClassNotFoundException
-     * @throws IOException
      */
     public synchronized void getFileProtocol() throws ClassNotFoundException, IOException {
-	logger.info("Getting file request from client " + client_id);
+	logger.info("Attending file request from user " + client_id);
 	String fileName = (String) channel_object_in.readObject();
 	String ownerUser = Server.getUserWithFile(fileName);
 
 	if (ownerUser == null) {
-	    logger.debug("No client connected has the file " + fileName);
+	    logger.debug("Notifying user " + client_id + " that no user connected has the file \"" + fileName + "\"");
 	    channel_object_out.writeObject(MessageType.NON_EXISTENT_FILE);
 	    channel_object_out.writeObject(fileName);
 	    channel_object_out.flush();
 	} else {
-	    logger.debug("Notifying the file \"" + fileName + "\"request to the file owner " + ownerUser);
-	    Server.notifyFileRequest(client_id, ownerUser, fileName);
+	    logger.debug("Asking server to notify the user " + ownerUser + " that his file \"" + fileName + "\" is being requested");
+	    Server.notifyFileRequestToOwner(client_id, ownerUser, fileName);
 	}
     }
     
     /**
-     * This method is invoked as part of the file transfer protocol between clients.
-     * It notifies the file owner to transfer a file to a concrete user.
-     * 
-     * @param fileName
-     * @throws IOException
+     * Method invoked as part of the file transfer protocol between clients. It
+     * notifies the file owner to transfer a file to a concrete user.
      */
     public synchronized void sendFileRequest(String fileName, String requestUserId) throws IOException {
-	logger.info("Sending file \"" + fileName + "\" request to client " + client_id);
+	logger.info("Sending user "+client_id+" a request to send his file \""+fileName+"\""+" to user "+requestUserId);
 	channel_object_out.writeObject(MessageType.FILE_REQUEST_OWNER);
 	channel_object_out.writeObject(fileName);
 	channel_object_out.writeObject(requestUserId);
@@ -122,12 +115,9 @@ public class ClientListener implements Runnable {
     /**
      * This method is invoked as part of the file transfer protocol between clients.
      * It notifies the file requester user to take it from a certain IP and port.
-     * 
-     * @param fileName
-     * @throws IOException
      */
     public synchronized void receiveFileRequest(String fileName, String ownerUserIP, int portNumber) throws IOException {
-	logger.info("Sending file \"" + fileName + "\" receive request to client " + client_id);
+	logger.info("Sending user " + client_id + " a request to read the file \"" + fileName + "\"");
 	channel_object_out.writeObject(MessageType.FILE_RECEIVE);
 	channel_object_out.writeObject(fileName);
 	channel_object_out.writeObject(ownerUserIP);
@@ -136,20 +126,22 @@ public class ClientListener implements Runnable {
     }
 
     /**
-     * 
+     * This method is invoked as part of the file transfer protocol between clients.
+     * It notifies the server that the file owner has enabled a connection for
+     * sharing the file requested.
      */
-    public synchronized void notifyFileReceiver() throws IOException, ClassNotFoundException {
-	String fileName = (String) channel_object_in.readObject();
+    public synchronized void notifyFileReceiverRequest() throws IOException, ClassNotFoundException {
+	String fileName    = (String) channel_object_in.readObject();
 	String requesterId = (String) channel_object_in.readObject();
-	String ownerIp = (String) channel_object_in.readObject();
+	String ownerIp     = (String) channel_object_in.readObject();
 	int port = (int) channel_object_in.readObject();
-	logger.info("Notifying the user " + requesterId + " the file \"" + fileName + "\" is ready to be taken");
-	Server.notifyFileRequestAttended(requesterId, fileName, ownerIp, port);
+	logger.info("Asking server to notify the user " + requesterId + " that the file \"" + fileName + "\" is ready to be taken");
+	Server.notifyFileReadyToRequester(requesterId, fileName, ownerIp, port);
     }
 
     /**
-     * Sets the connection, listens to requests and finally (when the client wants)
-     * close the connection safely.
+     * Executes the connection protocol with server, listens indefinitely to user
+     * requests and finally (when the user wants) closes the connection safely.
      */
     @Override
     public void run() {
@@ -161,10 +153,10 @@ public class ClientListener implements Runnable {
 	    while(type != MessageType.DISCONNECT) {
 		switch (type) 
 		{
-		case FILE_REQUEST_TO_SERVER:	getFileProtocol();	break;
-		case FILE_SENDER_READY:		notifyFileReceiver();	break;
-		case ASK_USERS:			getUsersProtocol();   	break;
-		default:			logger.error("Invalid request to the server");
+		case FILE_REQUEST_TO_SERVER:	getFileProtocol();		break;
+		case FILE_SENDER_READY:		notifyFileReceiverRequest();	break;
+		case ASK_USERS:			getUsersProtocol();   		break;
+		default:			logger.error("User "+client_id+" did an invalid request to the server");
 		}
 		type = (MessageType) channel_object_in.readObject();
 	    }

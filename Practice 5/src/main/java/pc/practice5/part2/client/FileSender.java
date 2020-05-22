@@ -10,10 +10,12 @@ import java.nio.file.Files;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import pc.practice5.part2.common.User;
+
 /**
- * When a user is requested to send a file he runs this class properly
+ * When a user is requested to share a file he runs this class properly
  * configured. This implements a server in file owner machine which waits until
- * requester user connects and the file is sent to him.
+ * requester user connects and the file is copied to him.
  * 
  * @author Francisco Javier Blázquez Martínez
  */
@@ -38,20 +40,20 @@ public class FileSender implements Runnable {
     @Override
     public void run() {
 	
-	    try (ServerSocket serverSocket = new ServerSocket(port)) {
-		logger.debug("File sender for file " + file_name + " using port " + port);
-		Socket socket = serverSocket.accept();
-		OutputStream out = socket.getOutputStream();
+	try (ServerSocket serverSocket = new ServerSocket(port)) {
+	    logger.info("File sender for file \"" + file_name + "\" created using port " + port);
+	    Socket socket = serverSocket.accept();
+	    OutputStream out = socket.getOutputStream();
 
-		// File is taken from owner folder
-		File file = new File(Client.BASE_FOLDER + owner_id + "/" + file_name);
-		byte[] fileContent = Files.readAllBytes(file.toPath());
-		out.write(fileContent);
-		out.flush();
+	    // File is taken from owner folder
+	    File file = new File(User.BASE_FOLDER + owner_id + "/" + file_name);
+	    byte[] fileContent = Files.readAllBytes(file.toPath());
+	    out.write(fileContent);
+	    out.flush();
 
-		out.close();
-		socket.close();
-		logger.debug("User " + owner_id + " file sender for file " + file_name + " finished successfully");
-	    } catch (IOException ignored) { }
+	    out.close();
+	    socket.close();
+	    logger.debug("User " + owner_id + " file sender for file " + file_name + " finished successfully");
+	} catch (IOException ignored) {}
     }
 }
