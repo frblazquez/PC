@@ -22,12 +22,14 @@ public class ClientListener implements Runnable {
 
     private static final Logger logger = LogManager.getLogger();
 
+    private Server server;
     private Socket channel;
     private ObjectInputStream channel_object_in;
     private ObjectOutputStream channel_object_out;
     private String client_id;
 
-    public ClientListener(Socket socket) throws IOException {
+    public ClientListener(Server srv, Socket socket) throws IOException {
+	server = srv;
 	channel = socket;
 	channel_object_in = new ObjectInputStream(channel.getInputStream());
 	channel_object_out = new ObjectOutputStream(channel.getOutputStream());
@@ -50,7 +52,7 @@ public class ClientListener implements Runnable {
 	    throw new ConnectException("User " + client_id + "is not following connection protocol properly");
 	User user = (User) channel_object_in.readObject();
 	client_id = user.getId();
-	Server.addUser(user, this);
+	server.addUser(user, this);
 	channel_object_out.writeObject(MessageType.CONNECTED);
 	channel_object_out.flush();
 	logger.debug("Connection established with user " + client_id);
@@ -61,7 +63,7 @@ public class ClientListener implements Runnable {
      */
     public synchronized void disconnectProtocol() throws ClassNotFoundException, IOException {
 	logger.info("Attending disconnect request from client " + client_id);
-	Server.removeUser(client_id);
+	server.removeUser(client_id);
 	channel_object_out.writeObject(MessageType.DISCONNECTED);
 	channel_object_out.flush();
 	channel_object_in.close();
@@ -76,7 +78,7 @@ public class ClientListener implements Runnable {
     public synchronized void getUsersProtocol() throws IOException {
 	logger.info("Attending get-users request from user " + client_id);
 	channel_object_out.writeObject(MessageType.RECEIVE_USERS);
-	channel_object_out.writeObject(Server.getAllUsers());
+	channel_object_out.writeObject(server.getAllUsers());
 	channel_object_out.flush();
 	logger.debug("Users connected sent to user " + client_id);
     }
@@ -87,7 +89,7 @@ public class ClientListener implements Runnable {
     public synchronized void getFileProtocol() throws ClassNotFoundException, IOException {
 	logger.info("Attending file request from user " + client_id);
 	String fileName = (String) channel_object_in.readObject();
-	String ownerUser = Server.getUserWithFile(fileName);
+	String ownerUser = server.getUserWithFile(fileName);
 
 	if (ownerUser == null) {
 	    logger.debug("Notifying user " + client_id + " that no user connected has the file \"" + fileName + "\"");
@@ -96,7 +98,7 @@ public class ClientListener implements Runnable {
 	    channel_object_out.flush();
 	} else {
 	    logger.debug("Asking server to notify the user " + ownerUser + " that his file \"" + fileName + "\" is being requested");
-	    Server.notifyFileRequestToOwner(client_id, ownerUser, fileName);
+	    server.notifyFileRequestToOwner(client_id, ownerUser, fileName);
 	}
     }
     
@@ -136,7 +138,7 @@ public class ClientListener implements Runnable {
 	String ownerIp     = (String) channel_object_in.readObject();
 	int port = (int) channel_object_in.readObject();
 	logger.info("Asking server to notify the user " + requesterId + " that the file \"" + fileName + "\" is ready to be taken");
-	Server.notifyFileReadyToRequester(requesterId, fileName, ownerIp, port);
+	server.notifyFileReadyToRequester(requesterId, fileName, ownerIp, port);
     }
 
     /**

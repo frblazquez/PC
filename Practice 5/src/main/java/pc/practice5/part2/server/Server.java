@@ -21,17 +21,26 @@ import pc.practice5.part2.common.User;
  * 
  * @author Francisco Javier Blázquez Martínez
  */
-public class Server {
+public class Server implements Runnable {
 
     private static final int PORT = 4444;
     private static final Logger logger = LogManager.getLogger();
 
-    private static HashMap<String, String>         user_ip       = new HashMap<>();
-    private static HashMap<String, List<String>>   user_files    = new HashMap<>();
-    private static HashMap<String, String> 	   file_owner    = new HashMap<>();
-    private static HashMap<String, ClientListener> user_listener = new HashMap<>();
+    private HashMap<String, String> 	    user_ip 	  = new HashMap<>();
+    private HashMap<String, List<String>>   user_files    = new HashMap<>();
+    private HashMap<String, String> 	    file_owner 	  = new HashMap<>();
+    private HashMap<String, ClientListener> user_listener = new HashMap<>();
 
-    public static synchronized void addUser(User user, ClientListener listener) {
+    public void addUser(User user, ClientListener listener) {
+
+	// TODO: Explicar por qué lo has hecho así en vez de monitores explícitos, no
+	// queremos exclusión mutua sino coherencia y poder manejar el concepto de
+	// transacción o ejecución atómica de acciones en varias estructuras de datos.
+	synchronized (user_ip)       {
+	synchronized (user_files)    {
+	synchronized (user_listener) {
+	synchronized (file_owner)    {
+	    
 	logger.info("Adding user " + user.getId() + " to server");
 
 	// User IDs are supposed to be unique, we continue execution even though
@@ -50,53 +59,68 @@ public class Server {
 	    file_owner.put(fileName, user.getId());
 	}
 
-	logger.debug("User " + user.getId() + " successfully added to server");
+	logger.debug("User " + user.getId() + " successfully added to server");}}}}
     }
 
-    public static synchronized void removeUser(String userId) {
-	logger.info("Removing user " + userId + " from server");
-	user_ip.remove(userId);
-	user_files.remove(userId);
-	user_listener.remove(userId);
-	file_owner.values().removeIf(val -> userId.equals(val));
-	logger.debug("User " + userId + " successfully removed from server");
+    public void removeUser(String userId) {
+	// TODO: Explicar la importancia de tomarlos en el mismo orden que en addUser
+	// para evitar un interbloqueo
+	synchronized (user_ip)       {
+	synchronized (user_files)    {
+	synchronized (user_listener) {
+	synchronized (file_owner)    {
+	   logger.info("Removing user " + userId + " from server");
+	   user_ip.remove(userId);                                 
+	   user_files.remove(userId);                              
+	   user_listener.remove(userId);                  
+	   file_owner.values().removeIf(val -> userId.equals(val));
+	   logger.debug("User " + userId + " successfully removed from server");
+	}}}}
     }
 
-    public static synchronized List<String> getAllUsers() {
+    public List<String> getAllUsers() {
+	synchronized (user_ip) {
 	logger.debug("Server attending get-all-users request");
 	return new ArrayList<String>(user_ip.keySet());
+	}
     }
 
     /**
      * @return User ID of the owner of the file {@code fileName} or null if there is
      *         no such user connected
      */
-    public static synchronized String getUserWithFile(String fileName) {
+    public String getUserWithFile(String fileName) {
+	synchronized (file_owner) {
 	logger.debug("Server attending get-owner-for-file request");
 	return file_owner.get(fileName);
+	}
     }
 
     /**
      * Notifies the user owner of a file requested that a certain user requests it.
      */
-    public static synchronized void notifyFileRequestToOwner(String requestUserId, String ownerUserId, String fileName) {
+    public void notifyFileRequestToOwner(String requestUserId, String ownerUserId, String fileName) {
+	synchronized (user_listener) {
 	try {
 	    logger.info("Server sending \""+ fileName +"\" request from user "+requestUserId+" to owner user "+ownerUserId);
 	    user_listener.get(ownerUserId).sendFileRequest(fileName, requestUserId);
 	} catch (IOException e) {
 	    logger.error("Sending file \"" + fileName + "\" request to client " + ownerUserId + " failed", e);
 	}
+	}
     }
     
     /**
      * Notifies the user that requested a file that it's ready to be transferred.
      */
-    public static synchronized void notifyFileReadyToRequester(String requestUserId, String fileName, String ownerUserIp, int portNumber) {
+    public void notifyFileReadyToRequester(String requestUserId, String fileName, String ownerUserIp, int portNumber) {
+	synchronized (user_listener) {
 	try {
 	    logger.info("Server notifying user " + requestUserId + " to take the file \"" + fileName + "\"requested");
 	    user_listener.get(requestUserId).receiveFileRequest(fileName, ownerUserIp, portNumber);
 	} catch (IOException e) {
 	    logger.error("Server failed to communicate user "+ requestUserId +" to take the file \"" + fileName + "\" requested", e);
+	}
 	}
     }
 
@@ -106,17 +130,26 @@ public class Server {
      * 
      * @param args unused
      */
-    public static void main(String args[]) {
+    @Override
+    public void run() {
 
 	try (ServerSocket serverSocket = new ServerSocket(PORT)) {
 	    logger.debug("Server created at " + InetAddress.getLocalHost().getHostName() + ", port " + PORT);
 	    while(true) {
 		Socket socket = serverSocket.accept();
 		logger.debug("New connection established, creating listener for the client");
-		(new Thread(new ClientListener(socket))).start();
+		(new Thread(new ClientListener(this, socket))).start();
 	    }
 	} catch (IOException e) {
 	    logger.fatal("Unable to start the server", e);
 	}
     }
+
+    /**
+     * Runs a file-sharing server
+     */
+    public static void main(String args[]) {
+	(new Thread(new Server())).start();
+    }
+
 }
