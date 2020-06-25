@@ -3,7 +3,7 @@ package pc.practice2.locks;
 /**
  * Bakery algorithm for several threads implementation.
  * 
- * @author Francisco Javier Blázquez Martínez
+ * @author Francisco Javier Blázquez Martínez, Miguel Franqueira Varela
  */
 public class LockBakery implements MyLock {
 

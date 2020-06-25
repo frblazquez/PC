@@ -9,7 +9,7 @@ import pc.practice3.schema.Warehouse;
  * Producers-Consumers problem with semaphores with bus size of a single
  * element.
  * 
- * @author Francisco Javier Blázquez Martínez
+ * @author Francisco Javier Blázquez Martínez, Miguel Franqueira Varela
  */
 public class Part2 {
 

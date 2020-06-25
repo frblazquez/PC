@@ -3,7 +3,7 @@ package pc.practice2.locks;
 /**
  * Ticket lock algorithm for several threads implementation.
  * 
- * @author Francisco Javier Blázquez Martínez
+ * @author Francisco Javier Blázquez Martínez, Miguel Franqueira Varela
  */
 public class LockTicket implements MyLock {
 
@@ -28,6 +28,7 @@ public class LockTicket implements MyLock {
     @Override
     public void lock(int pid) {
 	turn[pid] = fetch_and_add_ticket();
+	turn = turn;
 	while(turn[pid] != actualTicket)
 	    /* Active wait */;
     }

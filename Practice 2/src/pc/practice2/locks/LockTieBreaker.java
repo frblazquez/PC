@@ -3,7 +3,7 @@ package pc.practice2.locks;
 /**
  * Peterson algorithm for several threads implementation.
  * 
- * @author Francisco Javier Blázquez Martínez
+ * @author Francisco Javier Blázquez Martínez, Miguel Franqueira Varela
  */
 public class LockTieBreaker implements MyLock {
 
@@ -36,7 +36,7 @@ public class LockTieBreaker implements MyLock {
 		if (j == pid)
 		    continue;
 		while(last[i] == pid && level[j] >= i)
-		    /* Active wait */;
+		    Thread.yield(); // /* Active wait */;
 	    }
 	}
     }

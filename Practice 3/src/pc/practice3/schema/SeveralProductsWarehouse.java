@@ -3,10 +3,10 @@ package pc.practice3.schema;
 import java.util.concurrent.Semaphore;
 
 /**
- * This class implements an common interface for both producers and consumers in
+ * This class implements a common interface for both producers and consumers in
  * Producer-Consumers problem with a bus for several products.
  * 
- * @author Francisco Javier Blázquez Martínez
+ * @author Francisco Javier Blázquez Martínez, Miguel Franqueira Varela
  */
 public class SeveralProductsWarehouse implements Warehouse {
 
@@ -16,7 +16,7 @@ public class SeveralProductsWarehouse implements Warehouse {
     private int consumeIdx = 0;
     private Product[] products = new Product[BUS_SIZE];
 
-    // These semaphores doesn't allow to access more prod. and consumers than the
+    // These semaphores doesn't allow to access more producers and consumers than the
     // space we have for them
     private Semaphore toProduct = new Semaphore(BUS_SIZE);
     private Semaphore toConsume = new Semaphore(0);

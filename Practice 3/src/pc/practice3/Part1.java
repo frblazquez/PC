@@ -5,7 +5,7 @@ import java.util.concurrent.Semaphore;
 /**
  * Practice 3 first part, mutual exclusion with a semaphore.
  * 
- * @author Francisco Javier Blázquez Martínez
+ * @author Francisco Javier Blázquez Martínez, Miguel Franqueira Varela
  */
 public class Part1 {
 

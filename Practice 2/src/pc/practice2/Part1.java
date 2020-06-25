@@ -4,7 +4,7 @@ package pc.practice2;
  * Practice 2 first part, Peterson algorithm, mutual exclusion mechanisms among
  * two processes.
  * 
- * @author Francisco Javier Blázquez Martínez
+ * @author Francisco Javier Blázquez Martínez, Miguel Franqueira Varela
  */
 public class Part1 {
 

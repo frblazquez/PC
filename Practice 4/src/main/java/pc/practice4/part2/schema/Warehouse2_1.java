@@ -53,7 +53,7 @@ public class Warehouse2_1 implements Warehouse {
     }
 
     @Override
-    public synchronized List<Product> extract(int n) {
+    public List<Product> extract(int n) {
 	List<Product> paux = new ArrayList<>();
 
 	synchronized (this) {

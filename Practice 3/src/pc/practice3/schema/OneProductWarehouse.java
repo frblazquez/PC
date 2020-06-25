@@ -6,7 +6,7 @@ import java.util.concurrent.Semaphore;
  * This class implements an common interface for the communication of producers
  * and consumers in the Producers-Consumers problem with only a space available.
  * 
- * @author Francisco Javier Blázquez Martínez
+ * @author Francisco Javier Blázquez Martínez, Miguel Franqueira Varela
  */
 public class OneProductWarehouse implements Warehouse {
 
