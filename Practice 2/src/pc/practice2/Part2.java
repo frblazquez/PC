@@ -1,6 +1,6 @@
 package pc.practice2;
 
-import pc.practice2.locks.LockTicket;
+import pc.practice2.locks.LockTicketMax;
 import pc.practice2.locks.MyLock;
 
 /**
@@ -13,7 +13,7 @@ public class Part2 {
     private static final int M = 500; // Number increments/decrements
     private static final int N = 10; // Number of incrementers/decrementers
 
-    private static MyLock mtx = new LockTicket(2 * N);
+    private static MyLock mtx = new LockTicketMax(2 * N);
     private static volatile int a = 0;
 
     public static void main(String[] args) {
