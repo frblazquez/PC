@@ -15,7 +15,7 @@ public class Consumer implements Runnable {
 	Product consumed;
 
 	while(true) {
-	    consumed = wh.extract();
+	    consumed = wh.extract(0);
 	    System.out.println("Process " + pid + " consumed " + consumed.getValueToString());
 	}
     }

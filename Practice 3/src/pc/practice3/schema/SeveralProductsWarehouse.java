@@ -1,5 +1,7 @@
 package pc.practice3.schema;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -10,49 +12,92 @@ import java.util.concurrent.Semaphore;
  */
 public class SeveralProductsWarehouse implements Warehouse {
 
-    private static final int BUS_SIZE = 100;
+    // El bus ahora es infinito
+    private List<Product> products = new ArrayList<>();
 
-    private int produceIdx = 0;
-    private int consumeIdx = 0;
-    private Product[] products = new Product[BUS_SIZE];
+    boolean produciendo;
+    int nProductoresEsperando = 0;
+    int nConsumidoresEsperando = 0;
+    int nConsumidoresConsumiendo = 0;
 
-    // These semaphores doesn't allow to access more producers and consumers than the
-    // space we have for them
-    private Semaphore toProduct = new Semaphore(BUS_SIZE);
-    private Semaphore toConsume = new Semaphore(0);
+    // Colas para productores y consumidores
+    private Semaphore consumersQueue = new Semaphore(0);
+    private Semaphore producersQueue = new Semaphore(0);
 
-    // These semaphores protect products bus to be accesed in mutual exclusion
-    private Semaphore mtxProduce = new Semaphore(1);
-    private Semaphore mtxConsume = new Semaphore(1);
+    // Mutex, controla el acceso a las variables:
+    // + produciendo
+    // + nProductoresEsperando
+    // + nConsumidoresEsperando
+    // + nConsumidoresConsumiendo
+    private Semaphore mtx = new Semaphore(1);
 
     @Override
     public void store(Product product) {
+
 	try {
-	    toProduct.acquire();
-	    mtxProduce.acquire();
-	    products[produceIdx] = product;
-	    produceIdx = (produceIdx + 1) % BUS_SIZE;
-	    mtxProduce.release();
-	    toConsume.release();
-	} catch (InterruptedException e) { // Interruptions are not considered
+	    mtx.acquire();
+	    // No es necesario comprobar si alguón productor está produciendo porque de ser
+	    // el caso este tendría la propiedad del mutex y no puede haber dos dentro de mtx.aquire()!
+	    while(nConsumidoresConsumiendo > 0) {
+		nProductoresEsperando++;
+		mtx.release();
+		producersQueue.acquire();
+		// No necesario por paso de testigo!
+		// mtx.acquire();
+		nProductoresEsperando--;
+	    }
+
+	    produciendo = true;
+	    products.add(product);
+
+	    if (nProductoresEsperando > 0)	// Quedan productores
+		producersQueue.release();	// PASO DE TESTIGO!
+	    else {				// No quedan productores, despertamos a los consumidores
+		produciendo = false;
+
+		for(int i = 0; i < nConsumidoresEsperando; i++)
+		    consumersQueue.release();
+
+		mtx.release();			// Importante liberarlo después de despertar a  los consumidores en espera
+	    }
+	} catch (InterruptedException e) {
 	    e.printStackTrace();
 	}
     }
 
     @Override
-    public Product extract() {
+    public Product extract(int idx) {
+	
 	Product paux = null;
 
 	try {
-	    toConsume.acquire();
-	    mtxConsume.acquire();
-	    paux = products[consumeIdx];
-	    products[consumeIdx] = null;
-	    consumeIdx = (consumeIdx + 1) % BUS_SIZE;
-	    mtxConsume.release();
-	    toProduct.release();
-	} catch (InterruptedException e) { // Interruptions are not considered
-	    e.printStackTrace();
+	    mtx.acquire();			// Para consultar/modificar las variables compartidas
+	    while(produciendo) {
+		nConsumidoresEsperando++;
+		mtx.release();
+		consumersQueue.acquire();
+		mtx.acquire();			// Para actualizar el estado antes de consumir
+		nConsumidoresEsperando--;
+	    }
+
+	    nConsumidoresConsumiendo++;		// Bloqueo a los productores
+	    mtx.release();
+
+	    // Fuera de la sección crítica
+	    paux = products.get(idx);
+
+	    mtx.acquire();
+	    nConsumidoresConsumiendo--; 	// Actualización del estado (posible desbloqueo a productores)
+
+	    if (nConsumidoresConsumiendo == 0) {
+		for(int i = 0; i < nProductoresEsperando; i++)
+		    producersQueue.release();
+	    }
+
+	    mtx.release();
+
+	} catch (InterruptedException e1) {
+	    e1.printStackTrace();
 	}
 
 	return paux;
